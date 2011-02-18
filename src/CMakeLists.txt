@@ -4,4 +4,4 @@ project(aunf)
 
 add_definitions(-Wall -g)
 
-add_executable(aunf main.cpp net.cpp parser.cpp unf.cpp)
+add_executable(aunf main.cpp net.cpp unf.cpp readlib.c)

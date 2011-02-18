@@ -1,8 +1,12 @@
 #ifndef NET_H
 #define NET_H
 
+#include "common.h"
+
 #include <string>
 #include <vector>
+
+using namespace std;
 
 class Place;
 class Trans;
@@ -41,7 +45,7 @@ class Cond {
 
   uchar mark;
 
-  vector<pair<Cond *, Hist *>> co_private;
+  vector< pair<Cond *, Hist *> > co_private;
 };
 
 class Event {
@@ -60,9 +64,9 @@ class Hist {
 
   Event *event;
 
-  vector<pair<Cond *, Hist *>> pred;
+  vector< pair<Cond *, Hist *> > pred;
 
-  vector<pair<Cond *, Hist *>> co_common;
+  vector< pair<Cond *, Hist *> > co_common;
 };
 
 class Net {
@@ -75,6 +79,6 @@ class Unf {
   vector<Event *> events;
 
   Event *root;
-}
+};
 
 #endif

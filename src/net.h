@@ -15,6 +15,7 @@ class Event;
 class Hist;
 
 class Place {
+public:
   string name;
   uint id;
 
@@ -24,15 +25,24 @@ class Place {
 
   vector<Cond *> image;
   uchar mark;
+
+  void addPost(Trans *);
+  void addPre(Trans *);
+  void addRead(Trans *);
 };
 
 class Trans {
+public:
   string name;
   uint id;
 
   vector<Place *> pre;
   vector<Place *> post;
   vector<Place *> read;
+
+  void addPost(Place *);
+  void addPre(Place *);
+  void addRead(Place *);
 };
 
 class Cond {
@@ -72,6 +82,11 @@ class Hist {
 class Net {
   vector<Place *> places;
   vector<Trans *> transitions;
+
+public:
+  void createArc(Place *pl, Trans *tr);
+  void createArc(Trans *tr, Place *pl);
+  void createReadArc(Trans *tr, Place *pl);
 };
 
 class Unf {

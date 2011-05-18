@@ -8,10 +8,16 @@
 /*****************************************************************************/
 
 #include <cstdio>
+#include <cstdlib>
 #include <cctype>
 #include <cstring>
 
 #include "common.h"
+
+void nc_error(const char *msg) {
+	cerr << msg << endl;
+	exit(1);
+}
 
 /*****************************************************************************/
 
@@ -57,10 +63,10 @@ void ReadCmdToken (FILE *file)
 	register int  len = 0;
 	char *string = sbuf;
 
-  if (!string) sbuf = string = malloc(sballoc = 512);
+  if (!string) sbuf = string = (char*)malloc(sballoc = 512);
 
 	if (!isalnum((int)(*string++ = ReadCharComment(file))))
-		nc_error("ReadCmdToken: alphanumerical string expected");
+    nc_error("ReadCmdToken: alphanumerical string expected");
 
 	len++;
 	while (isalnum((int)(*string = getc(file))) || *string == '_')
@@ -69,7 +75,7 @@ void ReadCmdToken (FILE *file)
 		len++;
 		if (len >= sballoc)
 		{
-      sbuf = realloc(sbuf,sballoc += 512);
+      sbuf = (char*)realloc(sbuf,sballoc += 512);
 			string = sbuf + len;
 		}
 	}
@@ -139,7 +145,7 @@ void ReadEnclString (FILE *file)
 	register int  len = 0;
 	char          delimiter;
 
-  if (!str) sbuf = str = malloc(sballoc = 512);
+  if (!str) sbuf = str = (char*)malloc(sballoc = 512);
 
 	if ((delimiter = ReadCharComment(file)) != '\'' && delimiter != '"')
 	      nc_error("ReadEnclString: string leading ' or \" expected");
@@ -150,7 +156,7 @@ void ReadEnclString (FILE *file)
 		len++;
 		if (len >= sballoc)
 		{
-      sbuf = realloc(sbuf,sballoc += 512);
+      sbuf = (char*)realloc(sbuf,sballoc += 512);
 			str = sbuf + len;
 		}
 	} /* while */

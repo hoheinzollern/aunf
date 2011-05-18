@@ -8,9 +8,9 @@
 /* The function read_pep_net at the end reads a PEP LL net into memory.	     */
 /*****************************************************************************/
 
-#include <stdio.h>
-#include <ctype.h>
-#include <string.h>
+#include <cstdio>
+#include <cctype>
+#include <cstring>
 
 #include "readlib.h"
 #include "net.h"
@@ -26,13 +26,13 @@ enum { TB_BLOCK = 0, TB_LINE = 1 };
 typedef struct
 {
 	char c;		/* Identifying character. */
-	void *ptr;	/* Memory location.	  */
+  void *ptr;	/* Memory location.	  */
 } t_dest;
 
 /* what to do with the data found in a block with matching name */
 typedef struct
 {
-	char *name;		/* Name of the block.			     */
+	const char *name;		/* Name of the block.			     */
 	int  (*hookfunc)();	/* called any time an entity has been read   */
 	char **restptr;		/* Where to store additional data fields.    */
 	t_dest *destarray;	/* Where to store which data field.	     */
@@ -52,7 +52,7 @@ typedef struct
 
 typedef struct
 {
-	char *name;
+	const char *name;
 	int  optional;
 	int  line;
 	t_fieldinfo *field;
@@ -72,7 +72,7 @@ typedef struct
 /* file should look like, and dest tells us what we should do with the data  */
 /* we find (what and where to store it).				     */
 
-void read_PEP_file(char *filename, char **types,
+void read_PEP_file(char *filename, const char **types,
 		   t_blockinfo *blocks, t_blockdest *dest)
 {
 	FILE *infile;
@@ -88,10 +88,10 @@ void read_PEP_file(char *filename, char **types,
 
 	/* Open the file, read the header. */
 	if (!(infile = fopen(filename, "r")))
-		nc_error("could not open file for reading");
+    nc_error("could not open file for reading", 0);
 
 	ReadCmdToken(infile);
-	if (strcmp(sbuf, "PEP")) nc_error("keyword `PEP' expected");
+  if (strcmp(sbuf, "PEP")) nc_error("keyword `PEP' expected", 0);
 
 	/* Check if the file's type (second line of file) is one of those
 	   that are allowed. */
@@ -99,12 +99,12 @@ void read_PEP_file(char *filename, char **types,
 	ReadCmdToken(infile);
 	for (; *types && strcmp(sbuf,*types); types++);
 	if (!*types) nc_error("unexpected format identifier '%s'",sbuf);
-	filetype = MYstrdup(sbuf);
+  filetype = strdup(sbuf);
 
 	ReadNewline(infile);
 	ReadCmdToken(infile);
 	if (strncmp(sbuf, "FORMAT_N", 8))
-		nc_error("keyword 'FORMAT_N' or 'FORMAT_N2' expected");
+    nc_error("keyword 'FORMAT_N' or 'FORMAT_N2' expected", 0);
 
   tbl = (t_lookup*) malloc(sizeof(t_lookup)*(128-' ')) - ' ';
 	ReadNewline(infile);
@@ -114,7 +114,7 @@ void read_PEP_file(char *filename, char **types,
 		/* Read next block id. */
 		ReadCmdToken(infile);
 
-		blocktype = MYstrdup(sbuf);
+    blocktype = strdup(sbuf);
 
 		/* Identify block. */
 		for (; blocks->name && strcmp(blocks->name,sbuf); blocks++)
@@ -151,7 +151,7 @@ void read_PEP_file(char *filename, char **types,
 		    if (feof(infile)) break;
 		    if (ch == '\n') continue;
 
-        *(rtmp = restptr = malloc(ralloc = 64)) = '\0';
+        *(rtmp = restptr = (char*) malloc(ralloc = 64)) = '\0';
 
 		    /* If information about this block is wanted, take
 		       the information where to store data from dest. */
@@ -235,14 +235,14 @@ void read_PEP_file(char *filename, char **types,
 			   a 'rest' string. */
 			while (!tbl[ch].ptr && rtmp-restptr+len >= ralloc)
 			{
-				restptr = MYrealloc(restptr, ralloc += 64);
+        restptr = (char*)realloc(restptr, ralloc += 64);
 				rtmp = restptr + strlen(restptr);
 			}
 			switch(tbl[ch].type)
 			{
 			    case FT_STRING:
 				if (tbl[ch].ptr)
-					*(char**)(tbl[ch].ptr) = MYstrdup(sbuf);
+          *(char**)(tbl[ch].ptr) = (char*)strdup(sbuf);
 				else if (strchr("'\"",ch))
 					sprintf(rtmp,"\"%s\"",sbuf);
 				else
@@ -260,7 +260,7 @@ void read_PEP_file(char *filename, char **types,
 				if (tbl[ch].ptr)
 				{
 				    *((t_coords**)(tbl[ch].ptr)) =
-            malloc(sizeof(t_coords));
+            (t_coords*)malloc(sizeof(t_coords));
 				    (*(t_coords**)(tbl[ch].ptr))->x = num;
 				    (*(t_coords**)(tbl[ch].ptr))->y = num2;
 				}
@@ -286,7 +286,7 @@ void read_PEP_file(char *filename, char **types,
 		    if (dest->name)
 		    {
 			if (dest->restptr) *(dest->restptr) = restptr;
-			if (dest->hookfunc()) nc_error("read aborted");
+      if (dest->hookfunc()) nc_error("read aborted", 0);
 		    }
 		    else
 			free(restptr);
@@ -312,7 +312,7 @@ void read_PEP_file(char *filename, char **types,
 /* Define the layout of a PEP net file.					     */
 
 /* Allowable types of nets. */
-char *type_llnet[] = { "PetriBox", "PTNet", NULL };
+const char *type_llnet[] = { "PetriBox", "PTNet", NULL };
 
 /* Defaults for blocks/places/transitions. */
 t_fieldinfo nodedefs[] =
@@ -450,10 +450,10 @@ t_blockinfo netblocks[] =
 #define NAMES_START 2000
 #define NAMES_OFFSET 1000
 
-net_t	 *rd_net;
+Net *rd_net;
 t_coords *rd_co;
-place_t	**PlArray;
-trans_t **TrArray;
+vector <Place*>PlArray;
+vector <Trans*>TrArray;
 int  AnzPlNamen, MaxPlNamen, AnzTrNamen, MaxTrNamen;
 int  placecount, transcount, rd_ident, rd_marked;
 char autonumbering, *rd_name;
@@ -470,7 +470,7 @@ int insert_place()
 	placecount++;
 	if (rd_ident && rd_ident != placecount) autonumbering = 0;
 	if (!rd_ident && autonumbering) rd_ident = placecount;
-	if (!rd_ident) nc_error("missing place identifier");
+  if (!rd_ident) nc_error("missing place identifier", 0);
 		
 	if (rd_ident > AnzPlNamen)
 		AnzPlNamen = rd_ident;
@@ -480,16 +480,18 @@ int insert_place()
 	while (AnzPlNamen >= MaxPlNamen)
 	{
 		int count;
-		PlArray = MYrealloc((char*) PlArray,
-			(MaxPlNamen += NAMES_OFFSET) * sizeof(place_t*));
+    MaxPlNamen += NAMES_OFFSET;
+    PlArray.resize(MaxPlNamen);
+    // TODO: check if new values are null by default
 		for (count = MaxPlNamen - NAMES_OFFSET; count < MaxPlNamen;)
 			PlArray[count++] = NULL;
 	}
 
-	PlArray[rd_ident] = nc_create_place(rd_net);
-	PlArray[rd_ident]->name = rd_name? MYstrdup(rd_name) : NULL;
-	if (rd_marked > 1) nc_error("place %s has more than one token",rd_name);
-	PlArray[rd_ident]->marked = !!rd_marked;
+  if (rd_marked > 1) nc_error("place %s has more than one token",rd_name);
+  Place *place = PlArray[rd_ident] = new Place();
+  place->id = rd_ident;
+  place->name = rd_name;
+  place->mark = rd_marked;
 	return 0;
 }
 
@@ -498,7 +500,7 @@ int insert_trans()
 	if (!transcount++) autonumbering = 1;
 	if (rd_ident && rd_ident != transcount) autonumbering = 0;
 	if (!rd_ident && autonumbering) rd_ident = transcount;
-	if (!rd_ident) nc_error("missing transition identifier");
+  if (!rd_ident) nc_error("missing transition identifier", 0);
 
 	if (rd_ident > AnzTrNamen)
 		AnzTrNamen = rd_ident;
@@ -508,14 +510,17 @@ int insert_trans()
 	while (AnzTrNamen >= MaxTrNamen)
 	{
 		int count;
-		TrArray = MYrealloc((char*) TrArray,
-			  (MaxTrNamen += NAMES_OFFSET) * sizeof(trans_t*));
+    MaxTrNamen += NAMES_OFFSET;
+    TrArray.resize(MaxTrNamen);
+    // TODO: check if resize initializes new values
 		for (count = MaxTrNamen - NAMES_OFFSET; count < MaxTrNamen;)
 			TrArray[count++] = NULL;
 	}
 
-	TrArray[rd_ident] = nc_create_transition(rd_net);
-	TrArray[rd_ident]->name = rd_name? MYstrdup(rd_name) : NULL;
+  Trans *trans = TrArray[rd_ident] = new Trans();
+  trans->id = rd_ident;
+  trans->name = rd_name;
+
 	return 0;
 }
 
@@ -534,13 +539,13 @@ int insert_arc()
 	tr = tp? rd_co->x : rd_co->y;
 
 	if (!tr || (tr > AnzTrNamen) || !TrArray[tr])
-		nc_error("arc: incorrect transition identifier");
+    nc_error("arc: incorrect transition identifier", 0);
 	if (!pl || (pl > AnzPlNamen) || !PlArray[pl] )
-		nc_error("arc: incorrect place identifier");
+    nc_error("arc: incorrect place identifier", 0);
 
-	tp? nc_create_arc(&(TrArray[tr]->postset),&(PlArray[pl]->preset),
+  tp? rd_net->createArc(//nc_create_arc(&(TrArray[tr]->postset),&(PlArray[pl]->preset),
 			  TrArray[tr],PlArray[pl])
-	  : nc_create_arc(&(PlArray[pl]->postset),&(TrArray[tr]->preset),
+    : rd_net->createArc(//nc_create_arc(&(PlArray[pl]->postset),&(TrArray[tr]->preset),
 			  PlArray[pl],TrArray[tr]);
 	return 0;
 }
@@ -550,18 +555,11 @@ int insert_ra()
 	int tr = rd_co->x, pl = rd_co->y;
 
 	if (!tr || (tr > AnzTrNamen) || !TrArray[tr])
-		nc_error("readarc: incorrect transition identifier");
+    nc_error("readarc: incorrect transition identifier", 0);
 	if (!pl || (pl > AnzPlNamen) || !PlArray[pl] )
-		nc_error("readarc: incorrect place identifier");
+    nc_error("readarc: incorrect place identifier", 0);
 
-	/* for now, I'm going to cheat and treat read arcs as
-	   conventional arcs in both directions... */
-	nc_create_arc(&(PlArray[pl]->postset),&(TrArray[tr]->preset),
-			  PlArray[pl],TrArray[tr]);
-	nc_create_arc(&(TrArray[tr]->postset),&(PlArray[pl]->preset),
-			  TrArray[tr],PlArray[pl]);
-
-	nc_create_arc(&(TrArray[tr]->readarcs),&(PlArray[pl]->readarcs),
+  rd_net->createReadArc(//nc_create_arc(&(TrArray[tr]->readarcs),&(PlArray[pl]->readarcs),
 			  TrArray[tr],PlArray[pl]);
 	return 0;
 }
@@ -569,7 +567,7 @@ int insert_ra()
 /*****************************************************************************/
 /* The main function of this file: read a PEP file into a net_t structure.   */
 
-net_t* read_pep_net(char *PEPfilename)
+Net* read_pep_net(char *PEPfilename)
 {
 	/* These tables instruct read_PEP_net where contents 
 	   of certain fields should be stored.		    */
@@ -606,15 +604,14 @@ net_t* read_pep_net(char *PEPfilename)
 	int count;
 
 	/* Set up tables. */
-  PlArray = malloc((count = MaxPlNamen = MaxTrNamen = NAMES_START)
-				* sizeof(place_t*));
-  TrArray = malloc(count * sizeof(trans_t*));
+  PlArray.resize(count = MaxPlNamen = MaxTrNamen = NAMES_START);
+  TrArray.resize(count);
 	AnzPlNamen = AnzTrNamen = 0;
 	while (--count)
 		PlArray[count] = NULL, TrArray[count] = NULL;
 
 	/* Initialize net */
-	rd_net = nc_create_net();
+  rd_net = new Net();
 
 	placecount = transcount = 0;
 	autonumbering = 1;
@@ -622,10 +619,7 @@ net_t* read_pep_net(char *PEPfilename)
 	/* Read the net */
 	read_PEP_file(PEPfilename, type_llnet, netblocks, netdest);
 
-	free(PlArray);
-	free(TrArray);
-
-	nc_compute_sizes(rd_net);
-
+  PlArray.resize(0);
+  TrArray.resize(0);
 	return rd_net;
 }

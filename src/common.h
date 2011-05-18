@@ -1,6 +1,11 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include <cstdio>
+#include <iostream>
+#include <cstdlib>
+using namespace std;
+
 template <class T1, class T2, class T3> struct triplet
 {
   typedef T1 first_type;
@@ -18,5 +23,12 @@ template <class T1, class T2, class T3> struct triplet
 
 typedef unsigned int uint;
 typedef unsigned char uchar;
+
+template<class T>
+void nc_error(const char *str, const T arg)
+{
+  printf(str, arg);
+  exit(1);
+}
 
 #endif

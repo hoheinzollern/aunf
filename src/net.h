@@ -4,9 +4,20 @@
 #include "common.h"
 
 #include <string>
-#include <vector>
+#include <list>
+#include <set>
 
 using namespace std;
+
+template <class T> class Node {
+public:
+    string name;
+    uint id;
+
+    list<T *> pre;
+    list<T *> post;
+    list<T *> read;
+};
 
 class Place;
 class Trans;
@@ -14,86 +25,70 @@ class Cond;
 class Event;
 class Hist;
 
-class Place {
+class Place : public Node<Trans> {
 public:
-  string name;
-  uint id;
-
-  vector<Trans *> pre;
-  vector<Trans *> post;
-  vector<Trans *> read;
-
-  vector<Cond *> image;
-  uchar mark;
-
-  void addPost(Trans *);
-  void addPre(Trans *);
-  void addRead(Trans *);
+    list<Cond *> image;
+    uchar mark;
 };
 
-class Trans {
+class Trans : public Node<Place> {
 public:
-  string name;
-  uint id;
-
-  vector<Place *> pre;
-  vector<Place *> post;
-  vector<Place *> read;
-
-  void addPost(Place *);
-  void addPre(Place *);
-  void addRead(Place *);
+    list<Event *> image;
 };
 
-class Cond {
-  uint id;
-  Place *origin;
-
-  Event *pre;
-  vector<Event *> post;
-  vector<Event *> read;
-
-  uchar mark;
-
-  vector< pair<Cond *, Hist *> > co_private;
+class Cond : public Node<Event> {
+public:
+    Place *origin;
 };
 
-class Event {
-  uint id;
-  Trans *origin;
+class Event : public Node<Event> {
+public:
+    Trans *origin;
+};
 
-  vector<Cond *> pre;
-  vector<Cond *> post;
-  vector<Cond *> read;
+#define Coset set<EnrichedCond *>
+#define Coset_iter set<EnrichedCond *>::iterator
 
-  uchar mark;
+class EnrichedCond {
+public:
+    Cond *c;
+    Hist *h;
+
+    EnrichedCond(Cond *c, Hist *h): c(c), h(h) {}
+
+    Coset *co();
+private:
+    Coset co_private;
 };
 
 class Hist {
-  uint size;
+public:
+    uint size;
 
-  Event *event;
+    Event *event;
 
-  vector< pair<Cond *, Hist *> > pred;
+    Coset pred;
 
-  vector< pair<Cond *, Hist *> > co_common;
+    Coset concurrent;
+    Coset subsumed;
 };
 
 class Net {
-  vector<Place *> places;
-  vector<Trans *> transitions;
-
 public:
-  void createArc(Place *pl, Trans *tr);
-  void createArc(Trans *tr, Place *pl);
-  void createReadArc(Trans *tr, Place *pl);
+    set<Place *> places;
+    set<Trans *> transitions;
+
+    void createArc(Place *, Trans *);
+    void createArc(Trans *, Place *);
+    void createReadArc(Trans *, Place *);
 };
 
 class Unf {
-  vector<Cond *> conditions;
-  vector<Event *> events;
+public:
+    set<Cond *> conditions;
+    set<Event *> events;
 
-  Event *root;
+    Event *root;
 };
 
 #endif

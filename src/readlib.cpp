@@ -7,17 +7,12 @@
 /* Some auxiliary functions for reading text files.                          */
 /*****************************************************************************/
 
-#include <cstdio>
+#include <iostream>
 #include <cstdlib>
 #include <cctype>
 #include <cstring>
 
 #include "common.h"
-
-void nc_error(const char *msg) {
-	cerr << msg << endl;
-	exit(1);
-}
 
 /*****************************************************************************/
 
@@ -33,23 +28,23 @@ int  sballoc = 0;	/* Amount of memory allocated for sbuf. */
 
 char ReadCharComment (FILE *file)
 {
-	register char ch = '\0';
+    register char ch = '\0';
 
-	do {
-		ch = '\n';
-		while (!feof(file) && strchr(" \t\b", ch = getc(file)));
-		if (ch == '%')
-		{
-			while (!feof(file) && (ch = getc(file)) != '\n');
-			if (ch == '\n')
-			{
-				HLinput_line++;
-				ch = '\0';
-			}
-		}
-	} while (!ch);
+    do {
+        ch = '\n';
+        while (!feof(file) && strchr(" \t\b", ch = getc(file)));
+        if (ch == '%')
+        {
+            while (!feof(file) && (ch = getc(file)) != '\n');
+            if (ch == '\n')
+            {
+                HLinput_line++;
+                ch = '\0';
+            }
+        }
+    } while (!ch);
 
-	return ch;
+    return ch;
 }
 
 /*****************************************************************************/
@@ -60,28 +55,28 @@ char ReadCharComment (FILE *file)
 
 void ReadCmdToken (FILE *file)
 {
-	register int  len = 0;
-	char *string = sbuf;
+    register int  len = 0;
+    char *string = sbuf;
 
-  if (!string) sbuf = string = (char*)malloc(sballoc = 512);
+    if (!string) sbuf = string = (char*)malloc(sballoc = 512);
 
-	if (!isalnum((int)(*string++ = ReadCharComment(file))))
-    nc_error("ReadCmdToken: alphanumerical string expected");
+    if (!isalnum((int)(*string++ = ReadCharComment(file))))
+    { cerr << "ReadCmdToken: alphanumerical string expected\n"; exit(1); }
 
-	len++;
-	while (isalnum((int)(*string = getc(file))) || *string == '_')
-	{
-		string++;
-		len++;
-		if (len >= sballoc)
-		{
-      sbuf = (char*)realloc(sbuf,sballoc += 512);
-			string = sbuf + len;
-		}
-	}
+    len++;
+    while (isalnum((int)(*string = getc(file))) || *string == '_')
+    {
+        string++;
+        len++;
+        if (len >= sballoc)
+        {
+            sbuf = (char*)realloc(sbuf,sballoc += 512);
+            string = sbuf + len;
+        }
+    }
 
-	ungetc(*string, file);
-	*string = '\0';
+    ungetc(*string, file);
+    *string = '\0';
 }
 
 
@@ -90,8 +85,8 @@ void ReadCmdToken (FILE *file)
 
 void ReadNewline (FILE *file)
 {
-	while (!feof(file) && getc(file) != '\n');
-	HLinput_line++;
+    while (!feof(file) && getc(file) != '\n');
+    HLinput_line++;
 }
 
 /*****************************************************************************/
@@ -99,10 +94,10 @@ void ReadNewline (FILE *file)
 
 char ReadWhiteSpace (FILE *file)
 {
-	register char ch = '\0';
-	while (!feof(file) && isspace((int)(ch = getc(file))))
-		if (ch == '\n') HLinput_line++;
-	return ch;
+    register char ch = '\0';
+    while (!feof(file) && isspace((int)(ch = getc(file))))
+        if (ch == '\n') HLinput_line++;
+    return ch;
 }
 
 /*****************************************************************************/
@@ -112,26 +107,26 @@ char ReadWhiteSpace (FILE *file)
 
 void ReadNumber (FILE *file, int *result)
 {
-	register int  number = 0;
-	register char digit;
-	register int  vorz = 1;
+    register int  number = 0;
+    register char digit;
+    register int  vorz = 1;
 
-	if ((digit = ReadWhiteSpace(file)) == '-')
-	{
-		vorz = -1;
-		digit = ReadWhiteSpace(file);
-	}
+    if ((digit = ReadWhiteSpace(file)) == '-')
+    {
+        vorz = -1;
+        digit = ReadWhiteSpace(file);
+    }
 
-	if (isdigit((int)digit))
-		number = digit - '0';
-	else
-		nc_error("ReadNumber: digit expected");
+    if (isdigit((int)digit))
+        number = digit - '0';
+    else
+    { cerr << "ReadNumber: digit expected\n"; exit(1); }
 
-	while (isdigit((int)(digit = getc(file))))
-		number = number * 10 + digit - '0';
+    while (isdigit((int)(digit = getc(file))))
+        number = number * 10 + digit - '0';
 
-	ungetc(digit, file);
-	*result = vorz * number;
+    ungetc(digit, file);
+    *result = vorz * number;
 }
 
 /*****************************************************************************/
@@ -141,29 +136,29 @@ void ReadNumber (FILE *file, int *result)
 
 void ReadEnclString (FILE *file)
 {
-	register char *str = sbuf;
-	register int  len = 0;
-	char          delimiter;
+    register char *str = sbuf;
+    register int  len = 0;
+    char          delimiter;
 
-  if (!str) sbuf = str = (char*)malloc(sballoc = 512);
+    if (!str) sbuf = str = (char*)malloc(sballoc = 512);
 
-	if ((delimiter = ReadCharComment(file)) != '\'' && delimiter != '"')
-	      nc_error("ReadEnclString: string leading ' or \" expected");
+    if ((delimiter = ReadCharComment(file)) != '\'' && delimiter != '"')
+    { cerr << "ReadEnclString: string leading ' or \" expected\n"; exit(1); }
 
-	while (!feof(file) && (*str = getc(file)) != delimiter)
-	{
-		str++;
-		len++;
-		if (len >= sballoc)
-		{
-      sbuf = (char*)realloc(sbuf,sballoc += 512);
-			str = sbuf + len;
-		}
-	} /* while */
+    while (!feof(file) && (*str = getc(file)) != delimiter)
+    {
+        str++;
+        len++;
+        if (len >= sballoc)
+        {
+            sbuf = (char*)realloc(sbuf,sballoc += 512);
+            str = sbuf + len;
+        }
+    } /* while */
 
-	if (*str != delimiter)
-	      nc_error("ReadEnclString: closing %c is missing",delimiter);
-	*str = '\0';
+    if (*str != delimiter)
+    { cerr << "ReadEnclString: closing " << delimiter << " is missing\n"; exit(1); }
+    *str = '\0';
 }
 
 /*****************************************************************************/
@@ -172,8 +167,8 @@ void ReadEnclString (FILE *file)
 
 void ReadCoordinates (FILE *file, int *x, int *y)
 {
-	ReadNumber(file,x);
-	if (ReadWhiteSpace(file) != '@')
-		nc_error("ReadCoordinates: '@' expected");
-	ReadNumber(file,y);
+    ReadNumber(file,x);
+    if (ReadWhiteSpace(file) != '@')
+    { cerr << "ReadCoordinates: '@' expected\n"; exit(1); }
+    ReadNumber(file,y);
 }

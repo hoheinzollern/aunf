@@ -1,49 +1,26 @@
 #include "net.h"
 
-void Place::addPost(Trans *t)
-{
-  this->post.push_back(t);
+Coset *EnrichedCond::co() {
+    Coset *co_result = new Coset();
+    co_result->insert(this->co_private.begin(), this->co_private.end());
+    for (Coset_iter it = h->concurrent.begin(); it != h->concurrent.end(); it++) {
+        if (*it != this)
+            co_result->insert(*it);
+    }
+    return co_result;
 }
 
-void Place::addPre(Trans *t)
-{
-  this->pre.push_back(t);
+void Net::createArc(Place *p, Trans *t) {
+    p->post.push_back(t);
+    t->pre.push_back(p);
 }
 
-void Place::addRead(Trans *t)
-{
-  this->read.push_back(t);
+void Net::createArc(Trans *t, Place *p) {
+    t->post.push_back(p);
+    p->pre.push_back(t);
 }
 
-void Trans::addPost(Place *p)
-{
-  this->post.push_back(p);
-}
-
-void Trans::addPre(Place *p)
-{
-  this->pre.push_back(p);
-}
-
-void Trans::addRead(Place *p)
-{
-  this->read.push_back(p);
-}
-
-void Net::createArc(Place *pl, Trans *tr)
-{
-  pl->addPost(tr);
-  tr->addPre(pl);
-}
-
-void Net::createArc(Trans *tr, Place *pl)
-{
-  tr->addPost(pl);
-  pl->addPre(tr);
-}
-
-void Net::createReadArc(Trans *tr, Place *pl)
-{
-  tr->addRead(pl);
-  pl->addRead(tr);
+void Net::createReadArc(Trans *t, Place *p) {
+    t->read.push_back(p);
+    p->read.push_back(t);
 }

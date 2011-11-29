@@ -4,8 +4,9 @@
 #include "net.h"
 
 class Unfolder {
-  Net net;
-  Unf unf;
+public:
+  Net *net;
+  Unf *unf;
 
   void unfold();
 };
